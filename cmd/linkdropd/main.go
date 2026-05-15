@@ -7,6 +7,7 @@ import (
     "io"
     "net/http"
     "os"
+    "strings"
 )
 
 const keyServerAddr = "serverAddr"
@@ -30,7 +31,7 @@ func getHealth(w http.ResponseWriter, r *http.Request) {
 
 func links (w http.ResponseWriter, r *http.Request){
     var l linkStruct
-
+    
     err := json.NewDecoder(r.Body).Decode(&l)
     
     if err != nil {
@@ -41,6 +42,12 @@ func links (w http.ResponseWriter, r *http.Request){
 
     if l.Link == "" {
         http.Error(w, "400 bad request - need to include a link", http.StatusBadRequest)
+        return
+    }
+    
+    // check to see if links are valid
+    if !strings.HasPrefix(l.Link, "http") && !strings.HasPrefix(l.Link, "https") {
+        http.Error(w, "400 bad request - not a real link", http.StatusBadRequest)
         return
     }
     
