@@ -57,8 +57,15 @@ func links (w http.ResponseWriter, r *http.Request) {
     io.WriteString(w, "link receieved!!\n")
     
     io.WriteString(w, "opening link...\n")
-    exec.Command("xdg-open", l.Link).Start()
-    io.WriteString(w, "link opened\n")    
+    errOpeningURL := exec.Command("xdg-open", l.Link).Start()
+    
+    if errOpeningURL != nil {
+        io.WriteString("500 error - error opening URL: ")
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+    
+    io.WriteString(w, "201 - link opened\n")    
     
     // var cmd := "xdg-open"
     // var args []string
@@ -81,6 +88,8 @@ func links (w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+    link := os.Args[0]
+
     http.HandleFunc("/", throwErr)
     http.HandleFunc("/health", getHealth)
     http.HandleFunc("/links", links)
