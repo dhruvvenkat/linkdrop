@@ -39,7 +39,12 @@ func links (w http.ResponseWriter, r *http.Request){
         return
     }
 
-    fmt.Printf("link: %s\n", l.Link)
+    if l.Link == "" {
+        http.Error(w, "400 bad request - need to include a link", http.StatusBadRequest)
+        return
+    }
+    
+    fmt.Printf("new link: %s\n", l.Link)
     io.WriteString(w, "link receieved!!\n")
         
     // link := r.PostFormValues("link")
