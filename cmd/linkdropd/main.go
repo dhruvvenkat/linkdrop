@@ -9,20 +9,21 @@ import (
 )
 
 // function runs when we hit root endpoint
-func getRoot(w http.ResponseWriter, r *http.Request) {
-    fmt.Printf("got / request\n")
-    io.WriteString(w, "wassup\n")
+func throwErr(w http.ResponseWriter, r *http.Request) {
+    fmt.Printf("got incorrect request\n")
+    io.WriteString(w, "404 - page not found\n")
 }
 
 // function runs when we hit hello endpoint
-func getHello(w http.ResponseWriter, r *http.Request) {
-    fmt.Printf("got /hello request\n")
-    io.WriteString(w, "hello world\n")
+func getHealth(w http.ResponseWriter, r *http.Request) {
+    fmt.Printf("got /health request\n")
+    io.WriteString(w, "healthy\n")
 }
 
 func main() {
-    http.HandleFunc("/", getRoot)
-    http.HandleFunc("/hello", getHello)
+    http.HandleFunc("/", throwErr)
+    http.HandleFunc("/health", getHealth)
+    
     
     err := http.ListenAndServe(":4545", nil)
      
