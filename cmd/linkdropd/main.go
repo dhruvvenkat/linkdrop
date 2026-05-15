@@ -60,7 +60,7 @@ func links (w http.ResponseWriter, r *http.Request) {
     errOpeningURL := exec.Command("xdg-open", l.Link).Start()
     
     if errOpeningURL != nil {
-        io.WriteString("500 error - error opening URL: ")
+        io.WriteString(w, "500 error - error opening URL: ")
         http.Error(w, err.Error(), http.StatusBadRequest)
         return
     }
@@ -88,12 +88,10 @@ func links (w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-    link := os.Args[0]
 
     http.HandleFunc("/", throwErr)
     http.HandleFunc("/health", getHealth)
-    http.HandleFunc("/links", links)
-    
+    http.HandleFunc("/links", links)    
     
     err := http.ListenAndServe(":4545", nil)
      
