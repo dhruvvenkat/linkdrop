@@ -1,12 +1,20 @@
 package main
 
 import (
+    "encoding/json"
     "errors"
     "fmt"
     "io"
     "net/http"
     "os"
 )
+
+const keyServerAddr = "serverAddr"
+
+// remember: lowercase fields are private to the struct
+type linkStruct struct {
+    Link string
+}
 
 // function runs when we hit root endpoint
 func throwErr(w http.ResponseWriter, r *http.Request) {
@@ -20,9 +28,38 @@ func getHealth(w http.ResponseWriter, r *http.Request) {
     io.WriteString(w, "healthy\n")
 }
 
+func links (w http.ResponseWriter, r *http.Request){
+    var l linkStruct
+
+    err := json.NewDecoder(r.Body).Decode(&l)
+    
+    if err != nil {
+        // display error on client side instead of server side
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    fmt.Printf("link: %s\n", l.Link)
+    io.WriteString(w, "link receieved!!\n")
+        
+    // link := r.PostFormValues("link")
+    
+    // if link == "" {
+        // fmt.Printf("/links was hit but no link was received")
+        // io.WriteString(w, "didnt work, include a string next time")
+        // return 0
+    // }
+    
+    // fmt.Printf("got link %s\n", link)
+    // io.WriteLine("link receieved!")
+
+//    return 0    
+}
+
 func main() {
     http.HandleFunc("/", throwErr)
     http.HandleFunc("/health", getHealth)
+    http.HandleFunc("/links", links)
     
     
     err := http.ListenAndServe(":4545", nil)
