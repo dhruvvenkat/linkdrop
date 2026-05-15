@@ -7,7 +7,9 @@ import (
     "io"
     "net/http"
     "os"
+    "os/exec"
     "strings"
+//    "runtime"
 )
 
 const keyServerAddr = "serverAddr"
@@ -29,7 +31,7 @@ func getHealth(w http.ResponseWriter, r *http.Request) {
     io.WriteString(w, "healthy\n")
 }
 
-func links (w http.ResponseWriter, r *http.Request){
+func links (w http.ResponseWriter, r *http.Request) {
     var l linkStruct
     
     err := json.NewDecoder(r.Body).Decode(&l)
@@ -53,6 +55,16 @@ func links (w http.ResponseWriter, r *http.Request){
     
     fmt.Printf("new link: %s\n", l.Link)
     io.WriteString(w, "link receieved!!\n")
+    
+    io.WriteString(w, "opening link...\n")
+    exec.Command("xdg-open", l.Link).Start()
+    io.WriteString(w, "link opened\n")    
+    
+    // var cmd := "xdg-open"
+    // var args []string
+    
+    // args = append(args, l.Link)
+    // return exec.Command(cmd, args...).Start()
         
     // link := r.PostFormValues("link")
     
