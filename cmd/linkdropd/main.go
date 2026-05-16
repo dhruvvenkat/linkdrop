@@ -10,6 +10,7 @@ import (
     "os/exec"
     "strings"
 //    "runtime"
+    "github.com/joho/godotenv"
 )
 
 const keyServerAddr = "serverAddr"
@@ -41,6 +42,22 @@ func links (w http.ResponseWriter, r *http.Request) {
         http.Error(w, err.Error(), http.StatusBadRequest)
         return
     }
+    
+    errDotEnv := godotenv.Load()
+    
+    if errDotEnv != nil {
+        fmt.Fprintln(os.Stderr, "error sourcing bearer token: %s", errDotEnv)
+    }    
+    
+    // authenticated := false
+
+    // basic bearer token auth - check if incoming bearer token is the same as the one in .env    
+    if os.Getenv("BEARER_TOKEN") == r.Header.Get("Authorization") {
+        fmt.Println("authenticated!")
+    } else {
+        http.Error(w, "401 unauthorized", http.StatusUnauthorized)
+        return
+    }
 
     if l.Link == "" {
         http.Error(w, "400 bad request - need to include a link", http.StatusBadRequest)
@@ -66,33 +83,13 @@ func links (w http.ResponseWriter, r *http.Request) {
     }
     
     io.WriteString(w, "201 - link opened\n")    
-    
-    // var cmd := "xdg-open"
-    // var args []string
-    
-    // args = append(args, l.Link)
-    // return exec.Command(cmd, args...).Start()
-        
-    // link := r.PostFormValues("link")
-    
-    // if link == "" {
-        // fmt.Printf("/links was hit but no link was received")
-        // io.WriteString(w, "didnt work, include a string next time")
-        // return 0
-    // }
-    
-    // fmt.Printf("got link %s\n", link)
-    // io.WriteLine("link receieved!")
-
-//    return 0    
-}
+} 
 
 func main() {
-
     http.HandleFunc("/", throwErr)
     http.HandleFunc("/health", getHealth)
     http.HandleFunc("/links", links)    
-    
+                
     err := http.ListenAndServe(":4545", nil)
      
     if errors.Is(err, http.ErrServerClosed) {

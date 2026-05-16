@@ -18,7 +18,13 @@ type jsonBody struct {
 
 func main() {
     linkArg := os.Args[1]
-    
+    bearerArg := os.Args[2]
+
+    if len(os.Args) < 3 {
+        fmt.Printf("Usage: ./main *LINK TO OPEN* *BEARER TOKEN*")
+        os.Exit(1)
+    }
+            
     payload := jsonBody{
         Link: linkArg,
     }
@@ -38,6 +44,8 @@ func main() {
         fmt.Fprintf(os.Stderr, "request failed: %v\n", err)
     }
     
+    // request.Header.Set("Authorization", "Bearer " + bearerArg)
+    request.Header.Set("Authorization", bearerArg)
     request.Header.Set("Content-Type", "application/json")
     
     client := http.Client{
