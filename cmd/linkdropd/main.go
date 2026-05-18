@@ -14,6 +14,7 @@ import (
     "database/sql"
     "log"
     _ "github.com/mattn/go-sqlite3"
+    "strconv"
 )
 
 const keyServerAddr = "serverAddr"
@@ -21,6 +22,10 @@ const keyServerAddr = "serverAddr"
 // remember: lowercase fields are private to the struct
 type linkStruct struct {
     Link string
+}
+
+type response struct {
+    DBResponse string `json:"DBResponse"`
 }
 
 // function runs when we hit root endpoint
@@ -75,8 +80,6 @@ func links (w http.ResponseWriter, r *http.Request) {
     if errDotEnv != nil {
         fmt.Fprintln(os.Stderr, "error sourcing bearer token: %s", errDotEnv)
     }    
-    
-    // authenticated := false
 
     // basic bearer token auth - check if incoming bearer token is the same as the one in .env    
     if os.Getenv("BEARER_TOKEN") == r.Header.Get("Authorization") {
@@ -99,10 +102,10 @@ func links (w http.ResponseWriter, r *http.Request) {
 
     // confirm    
     fmt.Printf("new link: %s\n", l.Link)
-    io.WriteString(w, "link receieved!!\n")
+    // io.WriteString(w, "link receieved!!\n")
     
     // open link on user pc
-    io.WriteString(w, "opening link...\n")
+    //io.WriteString(w, "opening link...\n")
     errOpeningURL := exec.Command("xdg-open", l.Link).Start()
     
     _, err = db.Exec("INSERT INTO links(url) VALUES(?)", l.Link)
@@ -112,12 +115,25 @@ func links (w http.ResponseWriter, r *http.Request) {
     log.Println("new link inserted into links table!!")
     
     if errOpeningURL != nil {
-        io.WriteString(w, "500 error - error opening URL: ")
+        //io.WriteString(w, "500 error - error opening URL: ")
         http.Error(w, err.Error(), http.StatusBadRequest)
         return
     }
     
-    io.WriteString(w, "201 - link opened\n")    
+    //io.WriteString(w, "201 - link opened\n")
+    
+    var lastID(int)
+    err = db.QueryRow("SELECT MAX(id) FROM links").Scan(&lastID)
+    
+    returned := response{DBResponse: "success! link entered at id " + strconv.Itoa(lastID) + "\n"}
+    
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    
+    err = json.NewEncoder(w).Encode(returned);
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+    }
 } 
 
 func main() {

@@ -16,6 +16,10 @@ type jsonBody struct {
     Link string `json:"link"`
 }
 
+type ServerResponse struct {
+    Response string `json:"DBResponse"`
+}
+
 func main() {
     linkArg := os.Args[1]
     bearerArg := os.Args[2]
@@ -41,7 +45,7 @@ func main() {
     request, reqErr := http.NewRequest(http.MethodPost, requestURL, bodyReader)
    
     if reqErr != nil {
-        fmt.Fprintf(os.Stderr, "request failed: %v\n", err)
+        fmt.Fprintf(os.Stderr, "request failed: %v\n", reqErr)
     }
     
     // request.Header.Set("Authorization", "Bearer " + bearerArg)
@@ -53,11 +57,19 @@ func main() {
     }
     
     res, err := client.Do(request)
+    defer res.Body.Close()
     
     if err != nil {
         fmt.Fprintf(os.Stderr, "client: error making http request: %s\n", err)
         os.Exit(1)
     }
     
-    defer res.Body.Close()
+    var responseMsg ServerResponse
+    err = json.NewDecoder(res.Body).Decode(&responseMsg)
+    if err != nil {
+        fmt.Println("error decoding response JSON: ", err)
+        return
+    }
+    
+    fmt.Printf(responseMsg.Response)
 }
