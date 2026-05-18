@@ -11,6 +11,9 @@ import (
     "strings"
 //    "runtime"
     "github.com/joho/godotenv"
+    "database/sql"
+    "log"
+    _ "github.com/mattn/go-sqlite3"
 )
 
 const keyServerAddr = "serverAddr"
@@ -34,6 +37,30 @@ func getHealth(w http.ResponseWriter, r *http.Request) {
 
 func links (w http.ResponseWriter, r *http.Request) {
     var l linkStruct
+    db, dbErr := sql.Open("sqlite3", "myLinks.db")
+    
+    if dbErr != nil {
+        log.Fatal(dbErr)
+    }
+    
+    defer db.Close()
+    
+    // statement to generate the table if it doesn't exist
+    // ** for future: extract site name from the site metadata and store that in the name column
+    sqlCreate := `
+        CREATE TABLE IF NOT EXISTS links (
+            id INTEGER PRIMARY KEY,
+            name TEXT,
+            url TEXT NOT NULL
+        );   
+    ` 
+    
+    _, dbCreateErr := db.Exec(sqlCreate)
+    
+    if dbCreateErr != nil {
+        log.Fatal(dbCreateErr)
+    }
+    log.Println("Table 'links' created!")
     
     err := json.NewDecoder(r.Body).Decode(&l)
     
@@ -69,12 +96,20 @@ func links (w http.ResponseWriter, r *http.Request) {
         http.Error(w, "400 bad request - not a real link", http.StatusBadRequest)
         return
     }
-    
+
+    // confirm    
     fmt.Printf("new link: %s\n", l.Link)
     io.WriteString(w, "link receieved!!\n")
     
+    // open link on user pc
     io.WriteString(w, "opening link...\n")
     errOpeningURL := exec.Command("xdg-open", l.Link).Start()
+    
+    _, err = db.Exec("INSERT INTO links(url) VALUES(?)", l.Link)
+    if err != nil {
+        log.Fatal(err)
+    }
+    log.Println("new link inserted into links table!!")
     
     if errOpeningURL != nil {
         io.WriteString(w, "500 error - error opening URL: ")
