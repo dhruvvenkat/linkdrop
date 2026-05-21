@@ -114,8 +114,33 @@ func addLink(w http.ResponseWriter, l linkStruct) {
     }
 }
 
-func showInbox() {
+func showInbox(w http.ResponseWriter) {
+	db, dbErr := sql.Open("sqlite3", "myLinks.db")
+	if dbErr != nil {
+		log.Fatal(dbErr)
+	}
+	defer db.Close()
 
+	rows, err := db.Query("SELECT url FROM links")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for rows.Next() {
+		var value string
+		if err := rows.Scan(&value); err != nil {
+			log.Fatal(err)
+		}
+		io.WriteString(w, value)
+	}
+
+	if err:= rows.Err(); err != nil {
+		log.Fatal(err)
+	}
+	
+	io.WriteString(w, "fetching links...")
+
+	
 }
 
 func links (w http.ResponseWriter, r *http.Request) {
@@ -146,7 +171,7 @@ func links (w http.ResponseWriter, r *http.Request) {
     if r.Method == "POST" {
         addLink(w, l);        
     } else if r.Method == "GET" {
-        showInbox();        
+        showInbox(w);        
     } else {
         http.Error(w, "unsuppored request type", http.StatusBadRequest);
         return;
