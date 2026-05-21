@@ -40,8 +40,7 @@ func getHealth(w http.ResponseWriter, r *http.Request) {
     io.WriteString(w, "healthy\n")
 }
 
-func links (w http.ResponseWriter, r *http.Request) {
-    var l linkStruct
+func addLink(w http.ResponseWriter, l linkStruct) {
     db, dbErr := sql.Open("sqlite3", "myLinks.db")
     
     if dbErr != nil {
@@ -66,28 +65,7 @@ func links (w http.ResponseWriter, r *http.Request) {
         log.Fatal(dbCreateErr)
     }
     log.Println("Table 'links' created!")
-    
-    err := json.NewDecoder(r.Body).Decode(&l)
-    
-    if err != nil {
-        // display error on client side instead of server side
-        http.Error(w, err.Error(), http.StatusBadRequest)
-        return
-    }
-    
-    errDotEnv := godotenv.Load()
-    
-    if errDotEnv != nil {
-        fmt.Fprintln(os.Stderr, "error sourcing bearer token: %s", errDotEnv)
-    }    
 
-    // basic bearer token auth - check if incoming bearer token is the same as the one in .env    
-    if os.Getenv("BEARER_TOKEN") == r.Header.Get("Authorization") {
-        fmt.Println("authenticated!")
-    } else {
-        http.Error(w, "401 unauthorized", http.StatusUnauthorized)
-        return
-    }
 
     if l.Link == "" {
         http.Error(w, "400 bad request - need to include a link", http.StatusBadRequest)
@@ -108,7 +86,7 @@ func links (w http.ResponseWriter, r *http.Request) {
     //io.WriteString(w, "opening link...\n")
     errOpeningURL := exec.Command("xdg-open", l.Link).Start()
     
-    _, err = db.Exec("INSERT INTO links(url) VALUES(?)", l.Link)
+    _, err := db.Exec("INSERT INTO links(url) VALUES(?)", l.Link)
     if err != nil {
         log.Fatal(err)
     }
@@ -134,6 +112,46 @@ func links (w http.ResponseWriter, r *http.Request) {
     if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
     }
+}
+
+func showInbox() {
+
+}
+
+func links (w http.ResponseWriter, r *http.Request) {
+    var l linkStruct
+    
+    err := json.NewDecoder(r.Body).Decode(&l)
+    
+    if err != nil {
+        // display error on client side instead of server side
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+    
+    errDotEnv := godotenv.Load()
+    
+    if errDotEnv != nil {
+        fmt.Fprintln(os.Stderr, "error sourcing bearer token: %s", errDotEnv)
+    }    
+
+    // basic bearer token auth - check if incoming bearer token is the same as the one in .env    
+    if os.Getenv("BEARER_TOKEN") == r.Header.Get("Authorization") {
+        fmt.Println("authenticated!")
+    } else {
+        http.Error(w, "401 unauthorized", http.StatusUnauthorized)
+        return
+    }
+
+    if r.Method == "POST" {
+        addLink(w, l);        
+    } else if r.Method == "GET" {
+        showInbox();        
+    } else {
+        http.Error(w, "unsuppored request type", http.StatusBadRequest);
+        return;
+    } 
+
 } 
 
 func main() {
