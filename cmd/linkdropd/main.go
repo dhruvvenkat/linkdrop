@@ -28,10 +28,6 @@ type response struct {
     DBResponse string `json:"DBResponse"`
 }
 
-type inboxResponse struct {
-    Inbox []string
-}
-
 // function runs when we hit root endpoint
 func throwErr(w http.ResponseWriter, r *http.Request) {
     fmt.Printf("got incorrect request\n")
@@ -124,45 +120,36 @@ func showInbox(w http.ResponseWriter) {
 		log.Fatal(dbErr)
 	}
 	defer db.Close()
-    
+
 	rows, err := db.Query("SELECT url FROM links")
 	if err != nil {
 		log.Fatal(err)
 	}
-    defer rows.Close()    
-    
-    linkSlice := []string{}
 
 	for rows.Next() {
 		var value string
 		if err := rows.Scan(&value); err != nil {
 			log.Fatal(err)
 		}
-        linkSlice = append(linkSlice, value)
+		io.WriteString(w, value)
 	}
 
 	if err:= rows.Err(); err != nil {
 		log.Fatal(err)
-	}	
-    
-    returned := inboxResponse{Inbox: linkSlice}
-    
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusOK)
-    
-    err = json.NewEncoder(w).Encode(returned)
-    if (err != nil) {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-    }
+	}
+	
+	io.WriteString(w, "fetching links...")
 
+	
 }
 
 func links (w http.ResponseWriter, r *http.Request) {
+    var l linkStruct
     
     errDotEnv := godotenv.Load()
     
     if errDotEnv != nil {
-        fmt.Fprintln(os.Stderr, "error sourcing bearer token: %s", errDotEnv)
+        log.Fatal(errDotEnv)
     }    
 
     // basic bearer token auth - check if incoming bearer token is the same as the one in .env    
@@ -173,18 +160,17 @@ func links (w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    if r.Method == http.MethodPost {
-        var l linkStruct
-    
-        err := json.NewDecoder(r.Body).Decode(&l)
-        if err != nil {
-            // display error on client side instead of server side
-            http.Error(w, err.Error(), http.StatusBadRequest)
-            return
-        }
-
-        addLink(w, l);        
-    } else if r.Method == http.MethodGet {
+    if r.Method == "POST" {
+    	err := json.NewDecoder(r.Body).Decode(&l)
+        
+   	    if err != nil {
+   	        // display error on client side instead of server side
+   	        http.Error(w, err.Error(), http.StatusBadRequest)
+   	        return
+    	}
+        addLink(w, l);
+                
+    } else if r.Method == "GET" {
         showInbox(w);        
     } else {
         http.Error(w, "unsuppored request type", http.StatusBadRequest);

@@ -6,12 +6,13 @@ import (
     //"os/exec"
     "net/http"
     //"strings"
-    //"io"    
+    "io"    
     "encoding/json"
     "bytes"
     "time"
     "log"
     "strconv"
+    "github.com/joho/godotenv"
 )
 
 type jsonBody struct {
@@ -41,25 +42,38 @@ func inbox(bearer string) {
         }
         
         resp, err := client.Do(request)
+        if err != nil {
+        	log.Fatal(err)
+        }
         defer resp.Body.Close()
         
         if err != nil {
             log.Fatal(err)
         }
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+		    fmt.Println("error reading response body:", err)
+		    return
+		}
+		
+		fmt.Println("status:", resp.Status)
+		fmt.Println("raw body:", string(body))
+		
+         var responseMsg InboxResponse
+         err = json.NewDecoder(resp.Body).Decode(&responseMsg)
+         if err != nil {
+ 
+             fmt.Println("error decoding response JSON: ", err)
+             return
+         }
         
-        var responseMsg InboxResponse
-        err = json.NewDecoder(resp.Body).Decode(&responseMsg)
-        if err != nil {
-            fmt.Println("error decoding response JSON: ", err)
-            return
-        }
-        
-        counter := 0
-        
-        for _, link := range responseMsg.Inbox {
-            counter += 1
-            fmt.Printf(strconv.Itoa(counter) + ": " + link + "\n")
-        }
+         counter := 0
+         
+         for _, link := range responseMsg.Inbox {
+             counter += 1
+             fmt.Printf(strconv.Itoa(counter) + ": " + link + "\n")
+         }
         
         return        	
 }
@@ -117,17 +131,22 @@ func send(link string, bearer string) {
 func main() {
 	if len (os.Args) >= 2 {
 		cmdArg := os.Args[1]
-		bearerArg := os.Args[2]
+
+		err := godotenv.Load()
+		if err != nil {
+			log.Fatal(err)
+		}
+		bearer := os.Getenv("BEARER_TOKEN")
 
 		if cmdArg == "inbox" {
-			inbox(bearerArg)
+			inbox(bearer)
 		} else if cmdArg == "send" {
-			if len (os.Args) == 2 {
+			if len (os.Args) < 3 {
 				fmt.Println("error - please provide a link")
 				return
 			} else {
-				linkArg := os.Args[3]
-				send(linkArg, bearerArg)	
+				linkArg := os.Args[2]
+				send(linkArg, bearer)	
 			}
 		}
 	} else {
