@@ -128,6 +128,11 @@ func send(link string, bearer string) {
         fmt.Printf(responseMsg.Response)	
 }
 
+func open(id int, bearer string) {
+
+	
+}
+
 func main() {
 	if len (os.Args) >= 2 {
 		cmdArg := os.Args[1]
@@ -148,6 +153,13 @@ func main() {
 				linkArg := os.Args[2]
 				send(linkArg, bearer)	
 			}
+		} else if cmdArg == "open" {
+			idToOpen := os.Args[2]
+			idInt, err := strconv.Atoi(idToOpen)
+			if err != nil {
+				log.Fatal(err)
+			}
+			open(idInt, bearer)
 		}
 	} else {
 		fmt.Println("error - not enough args given")
