@@ -6,7 +6,7 @@ import (
     //"os/exec"
     "net/http"
     //"strings"
-    "io"    
+    //"io"    
     "encoding/json"
     "bytes"
     "time"
@@ -51,14 +51,14 @@ func inbox(bearer string) {
             log.Fatal(err)
         }
 
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-		    fmt.Println("error reading response body:", err)
-		    return
-		}
-		
-		fmt.Println("status:", resp.Status)
-		fmt.Println("raw body:", string(body))
+		// body, err := io.ReadAll(resp.Body)
+		// if err != nil {
+		//     fmt.Println("error reading response body:", err)
+		//     return
+		// }
+		// 
+		// fmt.Println("status:", resp.Status)
+		// fmt.Println("raw body:", string(body))
 		
          var responseMsg InboxResponse
          err = json.NewDecoder(resp.Body).Decode(&responseMsg)
