@@ -10,6 +10,8 @@ import (
     "encoding/json"
     "bytes"
     "time"
+    "log"
+    "strconv"
 )
 
 type jsonBody struct {
@@ -20,15 +22,52 @@ type ServerResponse struct {
     Response string `json:"DBResponse"`
 }
 
+type InboxResponse struct {
+    Inbox []string `json:"Inbox"`
+}
+
 func main() {
     linkArg := os.Args[1]
-    bearerArg := os.Args[2]
+    bearerArg := os.Args[2]        
 
-    if len(os.Args) < 3 {
-        fmt.Printf("Usage: ./main *LINK TO OPEN* *BEARER TOKEN*")
-        os.Exit(1)
-    }
-            
+    if linkArg == "inbox" {
+        requestURL := fmt.Sprintf("http://localhost:4545/links")
+        request, reqErr := http.NewRequest(http.MethodGet, requestURL, nil)
+        
+        if reqErr != nil {
+            log.Fatal(reqErr)
+        }
+        
+        request.Header.Set("Authorization", bearerArg)
+        
+        client := http.Client {
+            Timeout: 5* time.Second,
+        }
+        
+        resp, err := client.Do(request)
+        defer resp.Body.Close()
+        
+        if err != nil {
+            log.Fatal(err)
+        }
+        
+        var responseMsg InboxResponse
+        err = json.NewDecoder(resp.Body).Decode(&responseMsg)
+        if err != nil {
+            fmt.Println("error decoding response JSON: ", err)
+            return
+        }
+        
+        counter := 0
+        
+        for _, link := range responseMsg.Inbox {
+            counter += 1
+            fmt.Printf(strconv.Itoa(counter) + ": " + link + "\n")
+        }
+        
+        return        
+    }           
+                                 
     payload := jsonBody{
         Link: linkArg,
     }
