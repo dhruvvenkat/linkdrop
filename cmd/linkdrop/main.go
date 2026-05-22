@@ -26,11 +26,7 @@ type InboxResponse struct {
     Inbox []string `json:"Inbox"`
 }
 
-func main() {
-    linkArg := os.Args[1]
-    bearerArg := os.Args[2]        
-
-    if linkArg == "inbox" {
+func inbox(bearer string) {
         requestURL := fmt.Sprintf("http://localhost:4545/links")
         request, reqErr := http.NewRequest(http.MethodGet, requestURL, nil)
         
@@ -38,7 +34,7 @@ func main() {
             log.Fatal(reqErr)
         }
         
-        request.Header.Set("Authorization", bearerArg)
+        request.Header.Set("Authorization", bearer)
         
         client := http.Client {
             Timeout: 5* time.Second,
@@ -65,50 +61,75 @@ func main() {
             fmt.Printf(strconv.Itoa(counter) + ": " + link + "\n")
         }
         
-        return        
-    }           
-                                 
-    payload := jsonBody{
-        Link: linkArg,
-    }
+        return        	
+}
 
-    l, err := json.Marshal(payload)
+func send(link string, bearer string) {
+        payload := jsonBody{
+            Link: link,
+        }
+    
+        l, err := json.Marshal(payload)
+                
+        if err != nil {
+            fmt.Fprintf(os.Stderr, "failed to marshal JSON: %v\n", err)
+        }
+    
+        bodyReader := bytes.NewReader(l)
             
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "failed to marshal JSON: %v\n", err)
-    }
-
-    bodyReader := bytes.NewReader(l)
+        requestURL := fmt.Sprintf("http://localhost:4545/links")
+        request, reqErr := http.NewRequest(http.MethodPost, requestURL, bodyReader)
+       
+        if reqErr != nil {
+            fmt.Fprintf(os.Stderr, "request failed: %v\n", reqErr)
+        }
         
-    requestURL := fmt.Sprintf("http://localhost:4545/links")
-    request, reqErr := http.NewRequest(http.MethodPost, requestURL, bodyReader)
-   
-    if reqErr != nil {
-        fmt.Fprintf(os.Stderr, "request failed: %v\n", reqErr)
-    }
-    
-    // request.Header.Set("Authorization", "Bearer " + bearerArg)
-    request.Header.Set("Authorization", bearerArg)
-    request.Header.Set("Content-Type", "application/json")
-    
-    client := http.Client{
-        Timeout: 5 * time.Second,
-    }
-    
-    res, err := client.Do(request)
-    defer res.Body.Close()
-    
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "client: error making http request: %s\n", err)
-        os.Exit(1)
-    }
-    
-    var responseMsg ServerResponse
-    err = json.NewDecoder(res.Body).Decode(&responseMsg)
-    if err != nil {
-        fmt.Println("error decoding response JSON: ", err)
-        return
-    }
-    
-    fmt.Printf(responseMsg.Response)
+        // request.Header.Set("Authorization", "Bearer " + bearerArg)
+        request.Header.Set("Authorization", bearer)
+        request.Header.Set("Content-Type", "application/json")
+        
+        client := http.Client{
+            Timeout: 5 * time.Second,
+        }
+        
+        res, err := client.Do(request)
+        defer res.Body.Close()
+        
+        if err != nil {
+            fmt.Fprintf(os.Stderr, "client: error making http request: %s\n", err)
+            os.Exit(1)
+        }
+        
+        var responseMsg ServerResponse
+        err = json.NewDecoder(res.Body).Decode(&responseMsg)
+        if err != nil {
+            fmt.Println("error decoding response JSON: ", err)
+            return
+        }
+        
+        fmt.Printf(responseMsg.Response)
+
+	
+}
+
+func main() {
+	if len (os.Args) >= 2 {
+		cmdArg := os.Args[1]
+		bearerArg := os.Args[2]
+		linkArg := os.Args[3]
+
+		if cmdArg == "inbox" {
+			inbox(bearerArg)
+		} else if cmdArg == "send" {
+			if len (os.Args) == 2 {
+				fmt.Println("error - please provide a link")
+				return
+			} else {
+				send(linkArg, bearerArg)	
+			}			
+		}
+	} else {
+		fmt.Println("error - not enough args given")
+		return
+	}
 }
