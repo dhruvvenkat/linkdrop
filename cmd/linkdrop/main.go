@@ -93,6 +93,10 @@ func send(link string, bearer string) {
         }
         
         res, err := client.Do(request)
+        if err != nil {
+        	log.Fatal(err)
+        }
+        
         defer res.Body.Close()
         
         if err != nil {
@@ -107,16 +111,13 @@ func send(link string, bearer string) {
             return
         }
         
-        fmt.Printf(responseMsg.Response)
-
-	
+        fmt.Printf(responseMsg.Response)	
 }
 
 func main() {
 	if len (os.Args) >= 2 {
 		cmdArg := os.Args[1]
 		bearerArg := os.Args[2]
-		linkArg := os.Args[3]
 
 		if cmdArg == "inbox" {
 			inbox(bearerArg)
@@ -125,8 +126,9 @@ func main() {
 				fmt.Println("error - please provide a link")
 				return
 			} else {
+				linkArg := os.Args[3]
 				send(linkArg, bearerArg)	
-			}			
+			}
 		}
 	} else {
 		fmt.Println("error - not enough args given")
