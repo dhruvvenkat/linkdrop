@@ -39,6 +39,14 @@ type inboxResponse struct {
 	Inbox []inboxLinkBucket
 }
 
+type OpenLink struct {
+	Id int `json:"ID"`
+}
+
+type OpenLinkResponse struct {
+	Msg string `json:"msg"`
+}
+
 // function runs when we hit root endpoint
 func throwErr(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("got incorrect request\n")
@@ -204,10 +212,46 @@ func links(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func open(w http.ResponseWriter, r *http.Request) {
+	var o OpenLink
+	db, dbErr := sql.Open("sqlite3", "myLinks.db")
+	if dbErr != nil {
+		log.Fatal(dbErr)
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&o)
+	if err != nil {
+		// display error on client side instead of server side
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	fmt.Println(o.Id)
+
+	var link string
+	err = db.QueryRow("SELECT url FROM links WHERE id = ?", o.Id).Scan(&link)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = exec.Command("xdg-open", link).Start()
+
+	or := OpenLinkResponse{Msg: "link at id " + strconv.Itoa(o.Id) + " opened!"}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	err = json.NewEncoder(w).Encode(or)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 func main() {
 	http.HandleFunc("/", throwErr)
 	http.HandleFunc("/health", getHealth)
 	http.HandleFunc("/links", links)
+	http.HandleFunc("/links/open", open)
 
 	err := http.ListenAndServe(":4545", nil)
 
