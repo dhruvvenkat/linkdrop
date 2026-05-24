@@ -39,7 +39,7 @@ type inboxResponse struct {
 	Inbox []inboxLinkBucket
 }
 
-type OpenLink struct {
+type recieveID struct {
 	Id int `json:"ID"`
 }
 
@@ -177,7 +177,16 @@ func showInbox(w http.ResponseWriter) {
 }
 
 func deleteLink(w http.ResponseWriter, r *http.Request) {
+	db, dbErr := sql.Open("sqlite3", "myLinks.db")
+	if dbErr != nil {
+		log.Fatal(dbErr)
+	}
+	defer db.Close()
 
+	_, err := db.Query("DELETE FROM links WHERE id = ?", id)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func links(w http.ResponseWriter, r *http.Request) {
@@ -217,7 +226,7 @@ func links(w http.ResponseWriter, r *http.Request) {
 }
 
 func open(w http.ResponseWriter, r *http.Request) {
-	var o OpenLink
+	var o recieveID
 	db, dbErr := sql.Open("sqlite3", "myLinks.db")
 	if dbErr != nil {
 		log.Fatal(dbErr)

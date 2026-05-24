@@ -210,9 +210,9 @@ func delete(id int, bearer string) {
 	}
 
 	var responseMsg ServerResponse
-	err = json.NewDecoder(res.body).Decode(&responseMsg)
+	err = json.NewDecoder(response.Body).Decode(&responseMsg)
 	if err != nil {
-		fmt.println("error decoding response JSON: ", err)
+		fmt.Println("error decoding response JSON: ", err)
 		return
 	}
 
