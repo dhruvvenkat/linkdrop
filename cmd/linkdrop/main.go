@@ -38,8 +38,8 @@ type InboxResponse struct {
 	Inbox []inboxLinkBucket `json:"Inbox"`
 }
 
-type OpenLink struct {
-	Id int `json:"ID`
+type AccessByID struct {
+	Id int `json:"ID"`
 }
 
 func inbox(bearer string) {
@@ -134,7 +134,7 @@ func send(link string, bearer string) {
 }
 
 func open(id int, bearer string) {
-	payload := OpenLink{
+	payload := AccessByID{
 		Id: id,
 	}
 
@@ -181,6 +181,45 @@ func open(id int, bearer string) {
 	fmt.Printf(responseMsg.Response)
 }
 
+func delete(id int, bearer string) {
+	idContainer := AccessByID{Id: id}
+
+	marshaled, err := json.Marshal(idContainer)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	bodyReader := bytes.NewReader(marshaled)
+
+	requestURL := fmt.Sprintf("http://localhost:4545/links/delete")
+	request, err := http.NewRequest(http.MethodPost, requestURL, bodyReader)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "request failed: %v\n", err)
+	}
+
+	request.Header.Set("Authorization", bearer)
+	request.Header.Set("Content-Type", "application/json")
+
+	client := http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	response, err := client.Do(request)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "client: error making http request: %s\n", err)
+	}
+
+	var responseMsg ServerResponse
+	err = json.NewDecoder(res.body).Decode(&responseMsg)
+	if err != nil {
+		fmt.println("error decoding response JSON: ", err)
+		return
+	}
+
+	fmt.Printf(responseMsg.Response)
+
+}
+
 // MAKE A HELPER FUNCTION TO DO ALL REQUESTS
 // THIS WAY WE CAN GET RID OF ALL THE REPETITIVE STUFF BETWEEN SEND/INBOX/OPEN
 func main() {
@@ -210,6 +249,16 @@ func main() {
 				log.Fatal(err)
 			}
 			open(idInt, bearer)
+		} else if cmdArg == "delete" {
+			idtoDelete := os.Args[2]
+			idInt, err := strconv.Atoi(idtoDelete)
+			if err != nil {
+				log.Fatal(err)
+			}
+			delete(idInt, bearer)
+		} else {
+			fmt.Println("unsupported operation!!")
+			return
 		}
 	} else {
 		fmt.Println("error - not enough args given")

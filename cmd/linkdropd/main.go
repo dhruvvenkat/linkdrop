@@ -176,6 +176,10 @@ func showInbox(w http.ResponseWriter) {
 
 }
 
+func deleteLink(w http.ResponseWriter, r *http.Request) {
+
+}
+
 func links(w http.ResponseWriter, r *http.Request) {
 
 	errDotEnv := godotenv.Load()
@@ -252,6 +256,7 @@ func main() {
 	http.HandleFunc("/health", getHealth)
 	http.HandleFunc("/links", links)
 	http.HandleFunc("/links/open", open)
+	http.HandleFunc("/links/delete", deleteLink)
 
 	err := http.ListenAndServe(":4545", nil)
 
