@@ -177,6 +177,13 @@ func showInbox(w http.ResponseWriter) {
 }
 
 func deleteLink(w http.ResponseWriter, r *http.Request) {
+	if os.Getenv("BEARER_TOKEN") == r.Header.Get("Authorization") {
+		fmt.Println("authenticated!")
+	} else {
+		http.Error(w, "401 unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	var d recieveID
 
 	db, dbErr := sql.Open("sqlite3", "myLinks.db")
@@ -246,6 +253,13 @@ func links(w http.ResponseWriter, r *http.Request) {
 }
 
 func open(w http.ResponseWriter, r *http.Request) {
+	if os.Getenv("BEARER_TOKEN") == r.Header.Get("Authorization") {
+		fmt.Println("authenticated!")
+	} else {
+		http.Error(w, "401 unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	var o recieveID
 	db, dbErr := sql.Open("sqlite3", "myLinks.db")
 	if dbErr != nil {
