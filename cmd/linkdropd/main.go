@@ -193,7 +193,7 @@ func deleteLink(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Printf("deleting id %d\n", d.Id)
 
-	_, err = db.Query("DELETE FROM links WHERE id = ?", d.Id)
+	_, err = db.Exec("DELETE FROM links WHERE id = ?", d.Id)
 	if err != nil {
 		log.Fatal(err)
 	}
