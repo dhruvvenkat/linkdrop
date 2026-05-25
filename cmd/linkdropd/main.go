@@ -43,7 +43,7 @@ type recieveID struct {
 	Id int `json:"ID"`
 }
 
-type OpenLinkResponse struct {
+type GenericResponse struct {
 	Msg string `json:"msg"`
 }
 
@@ -177,15 +177,35 @@ func showInbox(w http.ResponseWriter) {
 }
 
 func deleteLink(w http.ResponseWriter, r *http.Request) {
+	var d recieveID
+
 	db, dbErr := sql.Open("sqlite3", "myLinks.db")
 	if dbErr != nil {
 		log.Fatal(dbErr)
 	}
 	defer db.Close()
 
-	_, err := db.Query("DELETE FROM links WHERE id = ?", id)
+	err := json.NewDecoder(r.Body).Decode(&d)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	fmt.Printf("deleting id %d\n", d.Id)
+
+	_, err = db.Query("DELETE FROM links WHERE id = ?", d.Id)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	dr := GenericResponse{Msg: "link " + strconv.Itoa(d.Id) + " deleted successfully!"}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	err = json.NewEncoder(w).Encode(dr)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -239,7 +259,7 @@ func open(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(o.Id)
+	//fmt.Println(o.Id)
 
 	var link string
 	err = db.QueryRow("SELECT url FROM links WHERE id = ?", o.Id).Scan(&link)
@@ -249,7 +269,7 @@ func open(w http.ResponseWriter, r *http.Request) {
 
 	err = exec.Command("xdg-open", link).Start()
 
-	or := OpenLinkResponse{Msg: "link at id " + strconv.Itoa(o.Id) + " opened!"}
+	or := GenericResponse{Msg: "link at id " + strconv.Itoa(o.Id) + " opened!"}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
