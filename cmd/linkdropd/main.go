@@ -49,7 +49,7 @@ type GenericResponse struct {
 
 // function runs when we hit root endpoint
 func throwErr(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("got incorrect request\n")
+	fmt.Printf("got incorrect request: " + r.URL.Path)
 	io.WriteString(w, "404 - page not found\n")
 }
 
@@ -301,7 +301,7 @@ func main() {
 	http.HandleFunc("/links/open", open)
 	http.HandleFunc("/links/delete", deleteLink)
 
-	err := http.ListenAndServe(":4545", nil)
+	err := http.ListenAndServe("0.0.0.0:4545", nil)
 
 	if errors.Is(err, http.ErrServerClosed) {
 		fmt.Printf("server closed \n")
