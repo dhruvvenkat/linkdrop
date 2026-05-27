@@ -60,7 +60,12 @@ func getHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 func addLink(w http.ResponseWriter, l linkStruct) {
-	db, dbErr := sql.Open("sqlite3", "myLinks.db")
+	dbPath := os.Getenv("LINKDROP_DB_PATH")
+	if dbPath == "" {
+		dbPath = "myLinks.db" // if database doesn't exist after running install.sh, just create it in the installation folder
+	}
+
+	db, dbErr := sql.Open("sqlite3", dbPath)
 
 	if dbErr != nil {
 		log.Fatal(dbErr)

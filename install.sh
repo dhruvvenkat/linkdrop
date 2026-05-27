@@ -12,6 +12,9 @@ SYSTEMD_USER_DIR="$HOME/.config/systemd/user"
 CONFIG_FILE="$CONFIG_DIR/config.env"
 SERVICE_FILE="$SYSTEMD_USER_DIR/linkdropd.service"
 
+DATABASE_DIR="$HOME/.local/share/linkdrop"
+DATABASE_FILE="$DATABASE_DIR/myLinks.db"
+
 HTTP_PORT="${LINKDROP_PORT:-4545}"
 DISCOVERY_PORT="${LINKDROP_DISCOVERY_PORT:-4546}"
 
@@ -25,6 +28,7 @@ fi
 mkdir -p "$INSTALL_DIR"
 mkdir -p "$CONFIG_DIR"
 mkdir -p "$SYSTEMD_USER_DIR"
+mkdir -p "$DATABASE_DIR"
 
 echo "Building binaries..."
 
@@ -41,6 +45,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
 
     cat > "$CONFIG_FILE" <<EOF
 BEARER_TOKEN=$TOKEN
+LINKDROP_DB_PATH=$DB_FILE
 LINKDROP_HOST=0.0.0.0
 LINKDROP_PORT=$HTTP_PORT
 LINKDROP_SERVER_ADDR=http://localhost:$HTTP_PORT
